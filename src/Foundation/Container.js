@@ -5,7 +5,7 @@ import Service from './Service'
 import { isSubclassOf } from './Utils'
 
 /**
- * A Container manages a collection of Services and Providers
+ * A Container manages a collection of Services, Providers, and other Containers
  */
 class Container {
   constructor (prop = 'things') {
@@ -31,8 +31,8 @@ class Container {
   }
 
   register (Thing, opts) {
-    // Make sure Thing is a subclass of Service or Provider
-    if (!isSubclassOf(Thing, Service) || !isSubclassOf(Thing, Provider)) {
+    // Make sure Thing is a subclass of Service, Provider, or Container
+    if (!isSubclassOf(Thing, Service) || !isSubclassOf(Thing, Provider) || !isSubclassOf(Thing, Container)) {
       // TODO: Throw Error
     }
 
