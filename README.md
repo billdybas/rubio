@@ -1,5 +1,7 @@
 # rubio
 
+[![Standard - JavaScript Style Guide](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
+
 ## Introduction
 
 Geoffrey is a fledgling developer with a great, business-worthy idea. One weekend, he sits down to get started. He decides to use Node because that's what all the cool developers are talking about, and Geoffrey feels confident with his JavaScript skills. He's set on making a Single-page App and maybe even a mobile app, and he knows that other developers will want to interact with the data he collects, so building an API seems like a natural choice. But Geoffrey's stuck on how to get started - he's overwhelmed. There's just so many tools. Which should he use? What does he even need? He agonizes about having to get everything set up and configured. That's going to take days, even weeks! He doesn't have time for this. All he wants is to is get his idea up-and-running so that he can focus on everything else like designing the user experience and getting customer feedback and validation. If only there was an easier way.
