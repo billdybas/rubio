@@ -2,10 +2,9 @@
 
 import { Container as DataContainer } from 'js-data'
 import _ from 'lodash'
-import moment from 'moment-timezone'
 
 import Model from './Model'
-import { Container, isSubclassOf } from '../Foundation'
+import { Container, isSubclassOf, freshTimestamp } from '../Foundation'
 
 class ModelContainer extends Container {
   /**
@@ -46,7 +45,7 @@ class ModelContainer extends Container {
         afterCreate (props, opts, result) {
           // Add timestamp props
           if (this._hasTimestamps(props) && this._shouldModifyTimestamps()) {
-            const timestamp = this._freshTimestamp(config.timezone)
+            const timestamp = freshTimestamp(config.timezone)
             props['created_at'] = timestamp
             props['updated_at'] = timestamp
           }
@@ -55,7 +54,7 @@ class ModelContainer extends Container {
         afterUpdate (id, props, result) {
           // Add timestamp props
           if (this._hasTimestamps(props) && this._shouldModifyTimestamps()) {
-            const timestamp = this._freshTimestamp(config.timezone)
+            const timestamp = freshTimestamp(config.timezone)
             props['updated_at'] = timestamp
           }
           afterUpdate(id, props, result) // Pass through the args
@@ -106,10 +105,6 @@ class ModelContainer extends Container {
       // Models.User === Models.models.User // 'true'
       super.register(M, config, true)
     })
-  }
-
-  _freshTimestamp (timezone) {
-    return moment().tz(timezone).format()
   }
 
   _hasTimestamps (props) {

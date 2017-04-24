@@ -1,9 +1,8 @@
 'use strict'
 
 import _ from 'lodash'
-import moment from 'moment-timezone'
 
-import { Service } from '../Foundation'
+import { Service, freshTimestamp } from '../Foundation'
 
 class Model extends Service { // TODO: Change to Provider?
   constructor (opts) {
@@ -196,7 +195,7 @@ class Model extends Service { // TODO: Change to Provider?
    */
   setCreatedAt (id, time = '', opts) { // TODO: Consolidate this and setUpdatedAt like incrementOrDecrement
     // TODO: Validation on time?
-    const value = time || this._freshTimestamp(this.config.timezone)
+    const value = time || freshTimestamp(this.config.timezone)
 
     return this.update(id, {'created_at': value}, opts)
   }
@@ -211,7 +210,7 @@ class Model extends Service { // TODO: Change to Provider?
    */
   setUpdatedAt (id, time = '', opts) {
     // TODO: Validation on time?
-    const value = time || this._freshTimestamp(this.config.timezone)
+    const value = time || freshTimestamp(this.config.timezone)
 
     return this.update(id, {'updated_at': value}, opts)
   }
@@ -248,7 +247,7 @@ class Model extends Service { // TODO: Change to Provider?
    * @return {Promise}           - Promise which resolves with the updated Record or rejects if the Record could not be found
    */
   touch (id, opts) {
-    const time = this._freshTimestamp(this.config.timezone)
+    const time = freshTimestamp(this.config.timezone)
     return this.update(id, {'created_at': time, 'updated_at': time}, opts)
   }
 
@@ -287,14 +286,6 @@ class Model extends Service { // TODO: Change to Provider?
    */
   updateMany (records, opts) {
     return this.store.updateMany(this.resource, records, opts)
-  }
-
-  /**
-   * Get a timestamp of right now from the configured timezone
-   * @return {String} - An ISO 8601 Timestamp
-   */
-  _freshTimestamp (timezone) {
-    return moment().tz(timezone).format()
   }
 
   /**
