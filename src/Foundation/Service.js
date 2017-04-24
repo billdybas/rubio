@@ -1,5 +1,7 @@
 'use strict'
 
+import _ from 'lodash'
+
 /**
  * A Service manages state.
  * This could include managing configuration
@@ -8,7 +10,7 @@
 class Service {
   constructor (opts) {
     const defaultOpts = {}
-    this.config = {...defaultOpts, ...opts}
+    this.config = _.merge({}, defaultOpts, opts)
   }
 
   boot () {

@@ -30,7 +30,7 @@ class Container {
     })
   }
 
-  register (Thing, opts) {
+  register (Thing, opts, setOnThis = false) {
     // Make sure Thing is a subclass of Service, Provider, or Container
     if (!isSubclassOf(Thing, Service) || !isSubclassOf(Thing, Provider) || !isSubclassOf(Thing, Container)) {
       // TODO: Throw Error
@@ -40,6 +40,11 @@ class Container {
     // This will help prevent duplicate Thing's
     // being managed by a single Container.
     this[this._prop][[Thing]] = new Thing(opts)
+    // Optionally, add the Thing instance as a top-level property on the Container,
+    // so it can be referenced easier (e.g. Container.Thing instead of Container.things.Thing)
+    if (setOnThis) {
+      this[[Thing]] = this[this._prop][Thing]
+    }
   }
 }
 
