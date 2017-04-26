@@ -17,6 +17,8 @@ export function isSubclassOf (Thing, Klass) {
  * @param  {String} timezone - Timezone supported by Moment
  * @return {String}          - An ISO 8601 Timestamp
  */
-export function freshTimestamp (timezone) {
+export function freshTimestamp (timezone = 'UTC') {
+  // When tz isn't provided an argument, it defaults to 'UTC',
+  // but we include a default here so that it's more explicit and clear
   return moment().tz(timezone).format()
 }
