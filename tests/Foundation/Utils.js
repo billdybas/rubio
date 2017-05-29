@@ -42,7 +42,7 @@ describe('Utils', function () {
       const t = Utils.freshTimestamp()
       setTimeout(() => { // Moment tracks no finer than seconds, so we have to delay the test by a second
         const s = Utils.freshTimestamp()
-        assert.deepEqual(moment(s).isAfter(moment(t)), true)
+        assert(moment(s).isAfter(moment(t)))
         done()
       }, 1000)
     })
