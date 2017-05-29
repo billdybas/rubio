@@ -53,4 +53,8 @@ describe('Utils', function () {
       assert.deepEqual(t !== s, true) // These should have different offsets (Z and -05:00)
     })
   })
+
+  describe('isValidISO8601', function () {
+    // TODO
+  })
 })
