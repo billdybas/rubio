@@ -24,10 +24,10 @@ export function freshTimestamp (timezone = 'UTC') {
 }
 
 /**
- * Determines whether the provided string is a valid ISO 8601 Timestamp
- * @param  {String}  timeStr - String to test
+ * Determines whether the provided string is a valid ISO 8601 Datetime String
+ * @param  {String}  datetimeStr - String to test
  * @return {Boolean}
  */
-export function isValidISO8601 (timeStr) {
-  return moment(timeStr, moment.ISO_8601).isValid()
+export function isValidISO8601 (datetimeStr) {
+  return moment(datetimeStr, moment.ISO_8601).isValid()
 }

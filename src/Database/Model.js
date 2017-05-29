@@ -2,9 +2,9 @@
 
 import _ from 'lodash'
 
-import { Service, freshTimestamp } from '../Foundation'
+import { Provider, freshTimestamp, isValidISO8601 } from '../Foundation'
 
-class Model extends Service { // TODO: Change to Provider?
+class Model extends Provider {
   constructor (opts) {
     const defaultOpts = {
       defaultAdapter: '',
@@ -189,30 +189,24 @@ class Model extends Service { // TODO: Change to Provider?
    * Set's the 'created_at' property of the Record with the
    * provided primary key to the provided `time` or the current time
    * @param  {String|Number} id  - The primary key of the Record to modify
-   * @param  {String} time       - ISO 8601 Time String
+   * @param  {String} time       - ISO 8601 Datetime String
    * @param  {Object} [opts]     - Configuration options
    * @return {Promise}           - Promise which resolves with the updated Record or rejects if the Record could not be found
    */
-  setCreatedAt (id, time = '', opts) { // TODO: Consolidate this and setUpdatedAt like incrementOrDecrement
-    // TODO: Validation on time?
-    const value = time || freshTimestamp(this.config.timezone)
-
-    return this.update(id, {'created_at': value}, opts)
+  setCreatedAt (id, time = '', opts) {
+    return this._setUpdatedOrCreatedAt('created_at', id, time, opts)
   }
 
   /**
    * Set's the 'updated_at' property of the Record with the
    * provided primary key to the provided `time` or the current time
    * @param  {String|Number} id  - The primary key of the Record to modify
-   * @param  {String} time       - ISO 8601 Time String
+   * @param  {String} time       - ISO 8601 Datetime String
    * @param  {Object} [opts]     - Configuration options
    * @return {Promise}           - Promise which resolves with the updated Record or rejects if the Record could not be found
    */
   setUpdatedAt (id, time = '', opts) {
-    // TODO: Validation on time?
-    const value = time || freshTimestamp(this.config.timezone)
-
-    return this.update(id, {'updated_at': value}, opts)
+    return this._setUpdatedOrCreatedAt('updated_at', id, time, opts)
   }
 
   /**
@@ -333,6 +327,29 @@ class Model extends Service { // TODO: Change to Provider?
   _isNumeric (property) {
     const type = this.getSchema().properties[property].type
     return type === 'number' || type === 'integer'
+  }
+
+  /**
+   * Set's the 'created_at' or 'updated_at' property of the Record with the
+   * provided primary key to the provided `time` or the current time
+   * @param {String} method    - Either 'created_at' or 'updated_at'
+   * @param {String|Number} id - The primary key of the Record to modify
+   * @param {String} [time=''] - ISO 8601 Datetime String
+   * @param {[type]} opts      - Configuration options
+   */
+  _setUpdatedOrCreatedAt (method, id, time = '', opts) {
+    if (time && !isValidISO8601(time)) {
+      // TODO: Configuration value for time representation algo - either ISO8601 or Unix Timestamp or other custom
+      throw new Error(`${time} is not a properly formatted ISO 8601 Datetime String`)
+    } else {
+      time = freshTimestamp(this.config.timezone)
+    }
+
+    if (method === 'created_at' || method === 'updated_at') {
+      return this.update(id, {[method]: time}, opts)
+    } else {
+      return this.find(id, opts) // TODO: Change this to something with a similar signature to 'update'
+    }
   }
 }
 
