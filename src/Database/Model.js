@@ -8,7 +8,11 @@ class Model extends Provider {
   constructor (opts) {
     const defaultOpts = {
       defaultAdapter: '',
-      strict: true, // TODO: True or False? This will influence additional properties of js-data. Should I even manage this?
+      // NOTE: When strict mode is enabled, only properties defined
+      // in a Model's schema can be set. This is similar to how columns
+      // are defined in a relational database schema. When the properties
+      // of a Model are unknown upfront, strict mode should be disabled.
+      strict: true,
       timestamps: true,
       timezone: 'UTC'
     }
@@ -23,6 +27,10 @@ class Model extends Provider {
     // TODO: Should the schema be validated as a correct json-schema first?
     this.config.schema = (this.config.timestamps
       ? _.merge({}, this.config.schema, {properties: {'created_at': {type: 'string', default: ''}, 'updated_at': {type: 'string', default: ''}}}) // TODO: Is there a 'date' type?
+      : this.config.schema) // TODO: Should these be added to the 'required' array?
+
+    this.config.schema = (this.config.strict
+      ? _.merge({}, this.config.schema, {additionalProperties: false})
       : this.config.schema)
 
     props.forEach((prop) => {
