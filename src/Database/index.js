@@ -1,68 +1,20 @@
 'use strict'
 
 import { Container as DataContainer } from 'js-data'
-import _ from 'lodash'
 
 import Model from './Model'
-import { Container, isSubclassOf, freshTimestamp } from '../Foundation'
+import User from './User'
+import { Container, isSubclassOf } from '../Foundation'
 
 class ModelContainer extends Container {
   /**
-   * opts: {
-   *    timezone?: string,
-   *    mapperDefaults?: {
-   *      afterCreate?(props: any, opts: any, result: any): any
-   *      afterUpdate?(id: string|number, opts: any, result: any): any
-   *    }
-   * }
-   * @param  {Object} [opts] See above
+   * @param  {Object} [opts]
    * @return {void}
    */
   constructor (opts) {
     super('models')
 
-    const defaultOpts = {
-      timezone: 'UTC',
-      mapperDefaults: {}
-    }
-    // Shallowly merge so that any function definitions in 'mapperDefaults' are recognized
-    const config = {...defaultOpts, ...opts}
-
-    // Keep a reference of any user-supplied 'afterCreate' and 'afterUpdate'
-    // so that we can call them after our 'afterCreate' and 'afterUpdate'
-    // No-op prevents having to check for 'null' below: we can just call the function
-    const afterCreate = config.mapperDefaults.afterCreate || (() => {})
-    const afterUpdate = config.mapperDefaults.afterUpdate || (() => {})
-    // The merge below could overwrite our 'afterCreate' and 'afterUpdate' if a user
-    // supplies their own, so we delete them to prevent conflict. Note we have a reference
-    // to them right above, and 'delete' works even if the properties don't exist.
-    delete config.mapperDefaults.afterCreate
-    delete config.mapperDefaults.afterUpdate
-
-    // Setup the JS Data Container Opts
-    const dataContainerOpts = _.merge({}, {
-      mapperDefaults: {
-        afterCreate (props, opts, result) {
-          // Add timestamp props
-          if (this._hasTimestamps(props) && this._shouldModifyTimestamps()) {
-            const timestamp = freshTimestamp(config.timezone)
-            props['created_at'] = timestamp
-            props['updated_at'] = timestamp
-          }
-          afterCreate(props, opts, result) // Pass through the args
-        },
-        afterUpdate (id, props, result) {
-          // Add timestamp props
-          if (this._hasTimestamps(props) && this._shouldModifyTimestamps()) {
-            const timestamp = freshTimestamp(config.timezone)
-            props['updated_at'] = timestamp
-          }
-          afterUpdate(id, props, result) // Pass through the args
-        }
-      }
-    }, config.mapperDefaults) // See above
-
-    this.store = new DataContainer(dataContainerOpts)
+    this.store = new DataContainer(opts)
   }
 
   /**
@@ -106,17 +58,6 @@ class ModelContainer extends Container {
       super.register(M, config, true)
     })
   }
-
-  _hasTimestamps (props) {
-    // 'created_at' and 'updated_at' will be an empty string when first created,
-    // so we must check for their existance in the object
-    return (props['created_at'] !== undefined && props['updated_at'] !== undefined)
-  }
-
-  _shouldModifyTimestamps () {
-    const env = process.env.NODE_ENV // TODO: Use a global config instead of individual 'process' statements
-    return env !== 'test' || env !== 'migration'
-  }
 }
 
-export default { ModelContainer, Model }
+export { ModelContainer, Model, User }

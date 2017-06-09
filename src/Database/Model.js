@@ -1,6 +1,7 @@
 'use strict'
 
 import _ from 'lodash'
+import ajv from 'ajv'
 
 import { Provider, freshTimestamp, isValidISO8601 } from '../Foundation'
 
@@ -8,6 +9,7 @@ class Model extends Provider {
   constructor (opts) {
     const defaultOpts = {
       defaultAdapter: '',
+      mapperOpts: {},
       // NOTE: When strict mode is enabled, only properties defined
       // in a Model's schema can be set. This is similar to how columns
       // are defined in a relational database schema. When the properties
@@ -20,24 +22,91 @@ class Model extends Provider {
 
     const props = ['store', 'resource', 'schema', 'table', 'relations']
 
-    if (!_.has(this.config, props)) { // TODO: Might also want to make sure their values aren't null
+    const c = this.config
+
+    if (!_.has(c, props)) { // TODO: Might also want to make sure their values aren't null
       // TODO: Throw Error
     }
 
-    // TODO: Should the schema be validated as a correct json-schema first?
-    this.config.schema = (this.config.timestamps
-      ? _.merge({}, this.config.schema, {properties: {'created_at': {type: 'string', default: ''}, 'updated_at': {type: 'string', default: ''}}}) // TODO: Is there a 'date' type?
-      : this.config.schema) // TODO: Should these be added to the 'required' array?
+    if (c.timestamps) {
+      // Add the 'created_at' and 'updated_at' properties to the schema
+      c.schema = _.merge({}, c.schema, {properties: {'created_at': {type: 'date-time'}, 'updated_at': {type: 'date-time'}}}) // TODO: Should these be added to the 'required' array?
 
-    this.config.schema = (this.config.strict
-      ? _.merge({}, this.config.schema, {additionalProperties: false})
-      : this.config.schema)
+      // Keep a reference to 'this' since anything inside 'mapperOpts' won't be bound to this class
+      const self = this
+      // Keep a reference to any user-supplied life-cycle events we intend to overwrite
+      // so that we can call them after our required events
+      // No-op prevents having to check for 'null' below: we can just call the function
+      const beforeCreate = c.mapperOpts.beforeCreate || (() => {})
+      const beforeCreateMany = c.mapperOpts.beforeCreateMany || (() => {})
+      const beforeUpdate = c.mapperOpts.beforeUpdate || (() => {})
+      const beforeUpdateAll = c.mapperOpts.beforeUpdateAll || (() => {})
+      const beforeUpdateMany = c.mapperOpts.beforeUpdateMany || (() => {})
+      // The merge below could overwrite our life-cycle events if a user
+      // supplies their own, so we delete them to prevent conflict. Note we have a reference
+      // to them right above, and 'delete' works even if the properties don't exist
+      delete c.mapperOpts.beforeCreate
+      delete c.mapperOpts.beforeCreateMany
+      delete c.mapperOpts.beforeUpdate
+      delete c.mapperOpts.beforeUpdateAll
+      delete c.mapperOpts.beforeUpdateMany
+
+      const createTimestamps = function (props) {
+        if (self._shouldModifyTimestamps()) {
+          const timestamp = freshTimestamp(self.config.timezone)
+          props['created_at'] = timestamp
+          props['updated_at'] = timestamp
+        }
+      }
+
+      const updateTimestamps = function (props) {
+        if (self._shouldModifyTimestamps()) {
+          const timestamp = freshTimestamp(self.config.timezone)
+          props['updated_at'] = timestamp
+        }
+      }
+
+      c.mapperOpts = _.merge({}, {
+        beforeCreate (props, opts) {
+          createTimestamps(props)
+          beforeCreate(props, opts) // Pass through the args
+        },
+        beforeCreateMany (records, opts) {
+          records.forEach((record) => {
+            createTimestamps(record)
+          })
+          beforeCreateMany(records, opts) // Pass through the args
+        },
+        beforeUpdate (id, props, opts) {
+          updateTimestamps(props)
+          beforeUpdate(id, props, opts) // Pass through the args
+        },
+        beforeUpdateAll (props, query, opts) {
+          updateTimestamps(props)
+          beforeUpdateAll(props, query, opts) // Pass through the args
+        },
+        beforeUpdateMany (records, opts) {
+          records.forEach((record) => {
+            updateTimestamps(record)
+          })
+          beforeUpdateMany(records, opts) // Pass through the args
+        }
+      }, c.mapperOpts)
+    }
+
+    if (c.strict) {
+      c.schema = _.merge({}, c.schema, {additionalProperties: false})
+    }
+
+    // TODO: In dev-mode Validate the json-schema with ajv to make sure it's valid
 
     props.forEach((prop) => {
-      this[prop] = this.config[prop]
+      this[prop] = c[prop]
     })
 
-    Object.freeze(this.config)
+    this.store.defineMapper(this.resource, c.mapperOpts)
+
+    Object.freeze(c)
     Object.freeze(this)
   }
 
@@ -358,6 +427,11 @@ class Model extends Provider {
     } else {
       return this.find(id, opts) // TODO: Change this to something with a similar signature to 'update'
     }
+  }
+
+  _shouldModifyTimestamps () {
+    const env = process.env.NODE_ENV // TODO: Use a global config instead of individual 'process' statements
+    return env !== 'test' || env !== 'migration'
   }
 }
 
