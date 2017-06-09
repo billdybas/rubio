@@ -39,11 +39,12 @@ class Container {
     // Make the key the Thing's class name.
     // This will help prevent duplicate Thing's
     // being managed by a single Container.
-    this[this._prop][[Thing]] = new Thing(opts)
+    this[this._prop][Thing.name] = new Thing(opts)
+
     // Optionally, add the Thing instance as a top-level property on the Container,
     // so it can be referenced easier (e.g. Container.Thing instead of Container.things.Thing)
     if (setOnThis) {
-      this[[Thing]] = this[this._prop][Thing]
+      this[Thing.name] = this[this._prop][Thing.name]
     }
   }
 }
