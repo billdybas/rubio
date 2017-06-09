@@ -1,10 +1,14 @@
 'use strict'
 
-import { Container as DataContainer } from 'js-data'
+import Promise from 'bluebird'
+import { Container as DataContainer, utils } from 'js-data'
 
 import Model from './Model'
 import User from './User'
 import { Container, isSubclassOf } from '../Foundation'
+
+// Make js-data use bluebird internally
+utils.Promise = Promise
 
 class ModelContainer extends Container {
   /**
@@ -38,7 +42,7 @@ class ModelContainer extends Container {
     }
     const config = {...defaultOpts, ...opts, ...requiredOpts}
 
-    let mdls
+    let mdls = Models
     // If only 1 element is provided, make it an Array
     if (!Array.isArray(Models)) {
       mdls = [Models]
