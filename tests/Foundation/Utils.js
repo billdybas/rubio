@@ -56,5 +56,8 @@ describe('Utils', function () {
 
   describe('isValidISO8601', function () {
     // TODO
+    it('', function () {
+      assert(false)
+    })
   })
 })

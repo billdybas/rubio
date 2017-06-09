@@ -24,7 +24,7 @@ More on this Soon<sup>TM</sup>
 
 ### Tests
 
-More on this Soon<sup>TM</sup>
+Run `npm test`.
 
 ## Contributing
 
