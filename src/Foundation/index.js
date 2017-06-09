@@ -3,6 +3,13 @@
 import Container from './Container'
 import Provider from './Provider'
 import Service from './Service'
-import * as Utils from './Utils'
+import { isSubclassOf, freshTimestamp, isValidISO8601 } from './Utils'
 
-export { Container, Provider, Service, Utils }
+export {
+  Container,
+  Provider,
+  Service,
+  isSubclassOf,
+  freshTimestamp,
+  isValidISO8601
+}
