@@ -9,7 +9,7 @@ class Model extends Provider {
   constructor (opts) {
     const defaultOpts = {
       defaultAdapter: '',
-      mapperOpts: {},
+      lifecycleHooks: {},
       // NOTE: When strict mode is enabled, only properties defined
       // in a Model's schema can be set. This is similar to how columns
       // are defined in a relational database schema. When the properties
@@ -20,36 +20,38 @@ class Model extends Provider {
     }
     super(_.merge({}, defaultOpts, opts))
 
-    const props = ['store', 'resource', 'schema', 'table', 'relations']
-
+    const props = ['store', 'name', 'schema', 'table', 'relations']
     const c = this.config
 
-    if (!_.has(c, props)) { // TODO: Might also want to make sure their values aren't null
-      // TODO: Throw Error
-    }
+    props.forEach((prop) => {
+      if (!_.has(c, prop)) { // TODO: Might also want to make sure their values aren't null
+        // TODO: Throw Error
+        console.error(`${prop} property missing.`)
+      }
+    })
 
     if (c.timestamps) {
       // Add the 'created_at' and 'updated_at' properties to the schema
-      c.schema = _.merge({}, c.schema, {properties: {'created_at': {type: 'date-time'}, 'updated_at': {type: 'date-time'}}}) // TODO: Should these be added to the 'required' array?
+      c.schema = _.merge({}, c.schema, {properties: {'created_at': {type: 'string', format: 'date-time'}, 'updated_at': {type: 'string', format: 'date-time'}}}) // TODO: Should these be added to the 'required' array?
 
-      // Keep a reference to 'this' since anything inside 'mapperOpts' won't be bound to this class
+      // Keep a reference to 'this' since anything inside 'lifecycleHooks' won't be bound to this class
       const self = this
       // Keep a reference to any user-supplied life-cycle events we intend to overwrite
       // so that we can call them after our required events
       // No-op prevents having to check for 'null' below: we can just call the function
-      const beforeCreate = c.mapperOpts.beforeCreate || (() => {})
-      const beforeCreateMany = c.mapperOpts.beforeCreateMany || (() => {})
-      const beforeUpdate = c.mapperOpts.beforeUpdate || (() => {})
-      const beforeUpdateAll = c.mapperOpts.beforeUpdateAll || (() => {})
-      const beforeUpdateMany = c.mapperOpts.beforeUpdateMany || (() => {})
+      const beforeCreate = c.lifecycleHooks.beforeCreate || (() => {})
+      const beforeCreateMany = c.lifecycleHooks.beforeCreateMany || (() => {})
+      const beforeUpdate = c.lifecycleHooks.beforeUpdate || (() => {})
+      const beforeUpdateAll = c.lifecycleHooks.beforeUpdateAll || (() => {})
+      const beforeUpdateMany = c.lifecycleHooks.beforeUpdateMany || (() => {})
       // The merge below could overwrite our life-cycle events if a user
       // supplies their own, so we delete them to prevent conflict. Note we have a reference
       // to them right above, and 'delete' works even if the properties don't exist
-      delete c.mapperOpts.beforeCreate
-      delete c.mapperOpts.beforeCreateMany
-      delete c.mapperOpts.beforeUpdate
-      delete c.mapperOpts.beforeUpdateAll
-      delete c.mapperOpts.beforeUpdateMany
+      delete c.lifecycleHooks.beforeCreate
+      delete c.lifecycleHooks.beforeCreateMany
+      delete c.lifecycleHooks.beforeUpdate
+      delete c.lifecycleHooks.beforeUpdateAll
+      delete c.lifecycleHooks.beforeUpdateMany
 
       const createTimestamps = function (props) {
         if (self._shouldModifyTimestamps()) {
@@ -66,7 +68,7 @@ class Model extends Provider {
         }
       }
 
-      c.mapperOpts = _.merge({}, {
+      c.lifecycleHooks = _.merge({}, {
         beforeCreate (props, opts) {
           createTimestamps(props)
           beforeCreate(props, opts) // Pass through the args
@@ -91,7 +93,7 @@ class Model extends Provider {
           })
           beforeUpdateMany(records, opts) // Pass through the args
         }
-      }, c.mapperOpts)
+      }, c.lifecycleHooks)
     }
 
     if (c.strict) {
@@ -104,7 +106,11 @@ class Model extends Provider {
       this[prop] = c[prop]
     })
 
-    this.store.defineMapper(this.resource, c.mapperOpts)
+    this.store.defineMapper(this.name, _.merge({}, {
+      table: this.table,
+      schema: this.schema,
+      relations: this.relations
+    }, c.lifecycleHooks))
 
     Object.freeze(c)
     Object.freeze(this)
@@ -118,7 +124,7 @@ class Model extends Provider {
    * @return {Promise}       - Promise which resolves with the created Record
    */
   create (props, opts) {
-    return this.store.create(this.resource, props, opts)
+    return this.store.create(this.name, props, opts)
   }
 
   /**
@@ -129,7 +135,7 @@ class Model extends Provider {
    * @return {Promise}       - Promise which resolves to an Array of the created Records
    */
   createMany (records, opts) {
-    return this.store.createMany(this.resource, records, opts)
+    return this.store.createMany(this.name, records, opts)
   }
 
   /**
@@ -143,7 +149,7 @@ class Model extends Provider {
    */
   decrement (id, property, amount = 1, opts) {
     if (!this._hasProperty(property) || !this._isNumeric(property)) {
-      throw new Error(`${this.resource} either has no property '${property}' or that property is not numeric`)
+      throw new Error(`${this.name} either has no property '${property}' or that property is not numeric`)
     }
 
     return this._incrementOrDecrement('decrement', id, property, amount, opts)
@@ -157,7 +163,7 @@ class Model extends Provider {
    * @return {Promise}          - Promise which resolves when the Record has been destroyed. Resolves even if no Record was found to be destroyed
    */
   destroy (id, opts) {
-    return this.store.destroy(this.resource, id, opts)
+    return this.store.destroy(this.name, id, opts)
   }
 
   /**
@@ -168,7 +174,7 @@ class Model extends Provider {
    * @return {Promise}        - Promise which resolves when the Records have been destroyed. Resolves even if no Records were found to be destroyed
    */
   destroyAll (query, opts) {
-    return this.store.destroyAll(this.resource, query, opts)
+    return this.store.destroyAll(this.name, query, opts)
   }
 
   /**
@@ -178,8 +184,8 @@ class Model extends Provider {
    * @return {Promise}       - Promise which resolves with the created Record
    */
   duplicate (record, opts) {
-    if (!this.store.is(this.resource, record)) {
-      throw new Error(`${record} is not an instance of ${this.resource}`)
+    if (!this.store.is(this.name, record)) {
+      throw new Error(`${record} is not an instance of ${this.name}`)
     }
 
     return '' // TODO: Return duplicated Record
@@ -193,7 +199,7 @@ class Model extends Provider {
    * @return {Promise}          - Promise which resolves to a Record or undefined if not found
    */
   find (id, opts) {
-    return this.store.find(this.resource, id, opts)
+    return this.store.find(this.name, id, opts)
   }
 
   /**
@@ -204,7 +210,7 @@ class Model extends Provider {
    * @return {Promise}        - Promise which resolves to an Array of Records (which will be empty if no Records are found)
    */
   findAll (query, opts) {
-    return this.store.findAll(this.resource, query, opts)
+    return this.store.findAll(this.name, query, opts)
   }
 
   /**
@@ -217,7 +223,7 @@ class Model extends Provider {
    */
   findWhere (property, value, opts) {
     if (!this._hasProperty(property)) {
-      throw new Error(`${this.resource} has no property '${property}'`)
+      throw new Error(`${this.name} has no property '${property}'`)
     }
 
     return this.findAll({where: {[property]: {'===': value}}}, opts)
@@ -236,7 +242,7 @@ class Model extends Provider {
   getSchema (asObject = false) {
     // Return the schema at run-time so that any properties inherited
     // from mapperDefaults are accounted for
-    const schema = this.store.getMapper(this.resource).schema
+    const schema = this.store.getMapper(this.name).schema
 
     if (asObject) {
       return JSON.parse(JSON.stringify(schema))
@@ -256,7 +262,7 @@ class Model extends Provider {
    */
   increment (id, property, amount = 1, opts) {
     if (!this._hasProperty(property) || !this._isNumeric(property)) {
-      throw new Error(`${this.resource} either has no property '${property}' or that property is not numeric`)
+      throw new Error(`${this.name} either has no property '${property}' or that property is not numeric`)
     }
 
     return this._incrementOrDecrement('increment', id, property, amount, opts)
@@ -296,7 +302,7 @@ class Model extends Provider {
    * @return {Promise}        - Promise which resolves with the aggregated sum
    */
   sum (field, query, opts) {
-    return this.store.sum(this.resource, field, query, opts)
+    return this.store.sum(this.name, field, query, opts)
   }
 
   /**
@@ -308,7 +314,7 @@ class Model extends Provider {
    * @return {Object|Array.<Object>}        - POJO representation of the Record or Records
    */
   toJSON (records, opts) {
-    return this.store.toJSON(this.resource, records, opts)
+    return this.store.toJSON(this.name, records, opts)
   }
 
   /**
@@ -331,7 +337,7 @@ class Model extends Provider {
    * @return {Promise}           - Promise which resolves with the updated Record or rejects if the Record could not be found
    */
   update (id, props, opts) {
-    return this.store.update(this.resource, id, props, opts)
+    return this.store.update(this.name, id, props, opts)
   }
 
   /**
@@ -343,7 +349,7 @@ class Model extends Provider {
    * @return {Promise}        - Promise which resolves to an Array of Records (which will be empty if no Records are found)
    */
   updateAll (props, query, opts) {
-    return this.store.updateAll(this.resource, props, query, opts)
+    return this.store.updateAll(this.name, props, query, opts)
   }
 
   /**
@@ -356,7 +362,7 @@ class Model extends Provider {
    * @return {Promise} - Promise which resolved to an Array of Records or rejects if any of the records could not be found
    */
   updateMany (records, opts) {
-    return this.store.updateMany(this.resource, records, opts)
+    return this.store.updateMany(this.name, records, opts)
   }
 
   /**
