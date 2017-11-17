@@ -40,6 +40,7 @@ class Configurator extends Contract {
       }
     }
 
+    // NOTE: 'validators' will always have the properties defined in 'defaultOpts'
     this._config = _.merge({}, defaultOpts, opts)
   }
 
@@ -65,7 +66,12 @@ class Configurator extends Contract {
    * @return {Any|undefined} - Value at the specified key or 'undefined' if the key doesn't exist
    */
   get (prop = '') {
-    return this._envalid[prop]
+    // TODO: See: https://github.com/af/envalid/issues/70
+    try {
+      return this._envalid[prop]
+    } catch (e) {
+      return undefined
+    }
   }
 
   /**
@@ -74,7 +80,12 @@ class Configurator extends Contract {
    * @return {Boolean} - True if the key is found, False if the key isn't found
    */
   has (prop = '') {
-    return this._envalid[prop] !== undefined
+    // TODO: See: https://github.com/af/envalid/issues/70
+    try {
+      return this._envalid[prop] !== undefined
+    } catch (e) {
+      return false
+    }
   }
 }
 
