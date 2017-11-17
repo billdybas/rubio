@@ -30,7 +30,7 @@ class Configurator {
   /**
    * Retrieves the value at a particular key
    * @param  {String} [prop=''] - Key
-   * @return {Mixed|undefined} - Value at the specified key or 'undefined' if the key doesn't exist
+   * @return {Any|undefined} - Value at the specified key or 'undefined' if the key doesn't exist
    */
   get (prop = '') {}
   /**
