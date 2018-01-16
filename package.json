@@ -1,35 +1,8 @@
 {
-  "name": "rubio",
-  "version": "0.0.1",
-  "description": "",
-  "keywords": [],
-  "homepage": "https://github.com/rubiojs/rubio",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rubiojs/rubio.git"
-  },
-  "bugs": {
-    "url": "https://github.com/rubiojs/rubio/issues"
-  },
-  "contributors": [
-    {
-      "name": "Bill Dybas",
-      "url": "https://github.com/billdybas"
-    }
-  ],
-  "license": "MIT",
-  "main": "",
+  "private": true,
   "scripts": {
-    "build": "babel src --out-dir lib",
-    "test": "NODE_ENV=test mocha tests --recursive --require babel-core/register"
   },
-  "dependencies": {},
   "devDependencies": {
-    "babel-preset-es2015": "^6.22.0",
-    "babel-preset-stage-3": "^6.22.0",
-    "babel-register": "^6.24.0",
-    "mocha": "^3.2.0",
-    "standard": "^9.0.2"
-  },
-  "private": true
+    "lerna": "^2.7.0",
+  }
 }
